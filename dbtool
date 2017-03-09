@@ -62,12 +62,12 @@ def build_database(fn, prefix):
 		
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description='Manages PDBTM databases. Automatically fetches the PDBTM database if no options are specified.')
+	parser = argparse.ArgumentParser(description='Manages PDBTM databases. Automatically fetches the PDBTM database if no options are specified. Run without any arguments, dbtool will retrieve the PDBTM database, store it in pdbtm, and unpack it.')
 
-	parser.add_argument('-d', '--db', default='pdbtmall', help='pdbtmall.xml')
+	parser.add_argument('-d', '--db', default='pdbtmall', help='name of concatenated database file {default:pdbtmall}')
 	parser.add_argument('-b', '--build-db', action='store_true', help='(re)build database from an existing pdbtmsall file (available at http://pdbtm.enzim.hu/data/pdbtmall)')
-	parser.add_argument('directory', nargs='?', default='pdbtm', help='directory to store resulting files in')
-	parser.add_argument('-f', '--force-refresh', action='store_true', help='force overwrite of existing database')
+	parser.add_argument('directory', nargs='?', default='pdbtm', help='directory to store database in')
+	parser.add_argument('-f', '--force-refresh', action='store_true', help='force overwrite of existing database. Functionally equivalent to removing the old database and rerunning.')
 	#parser.add_argument('-n', metavar='bundle_size', type=int, help='size to cut bundles into')
 
 	args = parser.parse_args()
