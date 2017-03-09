@@ -66,13 +66,14 @@ class PDBTM:
 			return len(set1.intersection(set2))
 
 		for c in sorted(hels):
+			if c not in self.tmss: continue
 			for t in self.tmss[c]:
 				for h in hels[c]:
 					if overlap(h, t): 
 						t[0] = min(t[0], h[0])
 						t[1] = max(t[1], h[1])
 			#for t in self.tmss[c]: print('color %s, c. %s and i. %d-%d' % (('red', c) + tuple(t)))
-	def cut(self, n, prefix='cut_pdbs'): 
+	def cut(self, n, prefix='cut_pdbs', loopless=False): 
 		f = open(self.pdbfn)
 		chainspec = {}
 		for c in self.chains: chainspec[c] = ''
@@ -107,15 +108,27 @@ class PDBTM:
 
 				for l in chainspec[c].split('\n'):
 					if l.startswith('ATOM') or l.startswith('ANISOU') or l.startswith('TER') or l.startswith('HETATM'):
-						if a <= int(l[22:26]) <= b: bundlepdb += l + '\n'
+						if not loopless: 
+							if a <= int(l[22:26]) <= b: bundlepdb += l + '\n'
+						if loopless:
+							for j in range(i, i+n):
+								if self.tmss[c][j][0] <= int(l[22:26]) <= self.tmss[c][j][1]:
+									bundlepdb += l + '\n'
+									break
 					else: bundlepdb += l + '\n'
 
-				filename = '%s/%s_%s_h' % (prefix, self.id, c)
+				if not loopless: filename = '%s/%s_%s_h' % (prefix, self.id, c)
+				else: filename = '%s/%s_%s_lh' % (prefix, self.id, c)
 				for x in range(i + 1, i + n + 1): filename += '%d_' % x
 				filename = filename[:-1] + '.pdb'
 				f = open(filename, 'w')
 				f.write(bundlepdb)
 				f.close()
+	def print_indices(self):
+		for c in self.chains:
+			if c not in self.tmss: continue
+			for i, t in enumerate(self.tmss[c]): 
+				print('%s\t%s\t%d\t%d\t%d' % (self.id, c, i+1, t[0], t[1]))
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Cuts PDBs into n-helix bundles')
@@ -126,6 +139,8 @@ if __name__ == '__main__':
 	parser.add_argument('-n', '--n-helices', metavar='bundle_size', default=3, type=int, help='size to cut bundles into {default:3}')
 	parser.add_argument('-o', '--cut-dir', metavar='cut_directory', default='cut_pdbs', help='where to store cut PDBs {default:cut_pdbs}')
 	parser.add_argument('-p', '--raw-dir', metavar='raw_directory', default='raw_pdbs', help='where to store raw PDBs {default:raw_pdbs}')
+	parser.add_argument('-i', '--indices-only', action='store_true', help='print out indices instead of cutting')
+	parser.add_argument('-l', '--loopless', action='store_true', help='exclude loops when cutting PDBs')
 	parser.add_argument('pdb', metavar='PDB_id', nargs='+', help='PDB IDs to cut')
 
 	args = parser.parse_args()
@@ -136,4 +151,5 @@ if __name__ == '__main__':
 	for pdb in args.pdb:
 		x = PDBTM(pdb.lower(),'%s/%s' % (args.raw_dir, pdb), db=args.db)
 		x.refine_stride()
-		x.cut(args.n_helices)
+		if not args.indices_only: x.cut(args.n_helices, loopless=args.loopless)
+		else: x.print_indices()
