@@ -120,7 +120,9 @@ class PDBTM:
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Cuts PDBs into n-helix bundles')
 
-	parser.add_argument('-d', '--db', metavar='directory', default='pdbtm', help='directory containing PDBTM database files {default:pdbtm}')
+	if 'PDBTMDB' in os.environ: db = os.environ['PDBTMDB']
+	else: db = 'pdbtm'
+	parser.add_argument('-d', '--db', metavar='directory', default=db, help='directory containing PDBTM database files {default:%s}' % db)
 	parser.add_argument('-n', '--n-helices', metavar='bundle_size', default=3, type=int, help='size to cut bundles into {default:3}')
 	parser.add_argument('-o', '--cut-dir', metavar='cut_directory', default='cut_pdbs', help='where to store cut PDBs {default:cut_pdbs}')
 	parser.add_argument('-p', '--raw-dir', metavar='raw_directory', default='raw_pdbs', help='where to store raw PDBs {default:raw_pdbs}')
