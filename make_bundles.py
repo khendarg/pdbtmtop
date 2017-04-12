@@ -25,10 +25,12 @@ class PDBTM:
 		except IOError: 
 			if not os.path.isdir(db): error('Could not find an unpacked PDBTM database at %s. Has dbtool been run yet?' % db)
 			else: error('%s has no PDBTM entry. Is %s a membrane protein?' % (id, id))
-		s = []
-		for l in f: s.append(l)
+		#for l in f: s.append(l)
 		#s = strsum(s[1:-1]).strip()
-		s = strsum(s).strip()
+		#s = strsum(s).strip()
+		s = f.read()
+		f.close()
+		print(s)
 
 		self.root = ET.fromstring(s)
 		chains = []

@@ -27,13 +27,14 @@ def fetch(pdblist, outdir='raw_pdbs', overwrite=False):
 		f.close(), url.close()	
 		time.sleep(0.5)
 
-def align(subj, targ, length=4, loopless=False, rawdir='raw_pdbs', cutdir='cut_pdbs', redownload=False):
+def align(subj, targ, length=4, loopless=False, rawdir='raw_pdbs', cutdir='cut_pdbs', redownload=False, db='pdbtm'):
 	fetch(subj+targ, outdir=rawdir, overwrite=redownload)
 
 	subjfns, targfns = [], []
 	for pdb in subj+targ:
-		pass
-	
+		x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
+		x.refine_stride()
+		x.cut(length, prefix=cutdir, loopless=loopless)
 
 if __name__ == '__main__':
 	import argparse
@@ -52,7 +53,7 @@ if __name__ == '__main__':
 
 	parser.add_argument('-f', action='store_true', help='Force redownload of PDBs')
 
-	#parser.add_argument('-d', metavar='DB_DIR', default='pdbtmall', help='where to put
+	parser.add_argument('-d', metavar='DB_DIR', default='pdbtm', help='Where the PDBTM database is')
 
 	args = parser.parse_args()
 
@@ -86,4 +87,4 @@ if __name__ == '__main__':
 	while '' in subj: subj.remove('')
 	while '' in targ: targ.remove('')
 
-	align(subj, targ, length=args.l, loopless=args.x, rawdir=args.r, cutdir=args.c, redownload=args.f)
+	align(subj, targ, length=args.l, loopless=args.x, rawdir=args.r, cutdir=args.c, redownload=args.f, db=args.d)
