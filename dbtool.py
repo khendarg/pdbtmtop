@@ -38,21 +38,24 @@ def get_database(prefix='.'):
 def build_database(fn, prefix):
 	print('Unpacking database...', file=sys.stderr)
 	db = open(fn)
-	firstline = 2
+	firstline = 1
 	header = ''
 	entries = []
 	pdbids = []
 	for l in db:
+		if 'PDBTM' in l: continue
 		if firstline:
-			header = l
+			header += l
 			firstline -= 1
 			continue
 		if l.startswith('<pdbtm'):
+			#if entries: entries[-1] += '</PDBTM>'
 			entries.append(header)
 			a = l.find('ID=') + 4
 			b = a + 4
 			pdbids.append(l[a:b])
-		entries[-1] += l
+		if entries:
+			entries[-1] += l
 	if not prefix.endswith('/'): prefix += '/'
 	if not os.path.isdir(prefix): os.mkdir(prefix)
 	for entry in zip(pdbids, entries):

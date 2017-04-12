@@ -30,7 +30,6 @@ class PDBTM:
 		#s = strsum(s).strip()
 		s = f.read()
 		f.close()
-		print(s)
 
 		self.root = ET.fromstring(s)
 		chains = []
@@ -81,8 +80,11 @@ class PDBTM:
 		for c in self.chains: chainspec[c] = ''
 		def qq(x, i): return x[i-1:i+1].strip()
 		for l in f: 
+			try: 
+				if l.startswith('DBREF'): chainspec[qq(l, 12)] += l
+			except KeyError: chainspec[qq(l, 12)] = ''
+
 			if l.startswith('DBREF'): chainspec[qq(l, 12)] += l
-			elif l.startswith('DBREF'): chainspec[qq(l, 12)] += l
 			elif l.startswith('SEQADV'): chainspec[qq(l, 16)] += l
 			elif l.startswith('SEQRES'): chainspec[qq(l, 11)] += l
 			elif l.startswith('HET   '): chainspec[qq(l, 12)] += l
@@ -100,6 +102,7 @@ class PDBTM:
 				for c in self.chains: chainspec[c] += l
 		f.close()
 		if prefix.endswith('/'): prefix = prefix[:-1]
+		fns = []
 		for c in self.chains:
 			f = open('%s/%s_%s.pdb' % (prefix, self.id, c), 'w')
 			f.write(chainspec[c])
@@ -126,6 +129,8 @@ class PDBTM:
 				f = open(filename, 'w')
 				f.write(bundlepdb)
 				f.close()
+				fns.append(filename)
+		return fns
 	def print_indices(self):
 		for c in self.chains:
 			if c not in self.tmss: continue

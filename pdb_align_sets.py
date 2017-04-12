@@ -27,14 +27,26 @@ def fetch(pdblist, outdir='raw_pdbs', overwrite=False):
 		f.close(), url.close()	
 		time.sleep(0.5)
 
-def align(subj, targ, length=4, loopless=False, rawdir='raw_pdbs', cutdir='cut_pdbs', redownload=False, db='pdbtm'):
+def align(subj, targ, length=4, loopless=False, rawdir='raw_pdbs', cutdir='cut_pdbs', outdir='mobiles', redownload=False, db='pdbtm', dryrun=False):
+
+	if not os.path.isdir(outdir): os.mkdir(outdir)
+
 	fetch(subj+targ, outdir=rawdir, overwrite=redownload)
 
 	subjfns, targfns = [], []
-	for pdb in subj+targ:
+	for pdb in subj:
 		x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
 		x.refine_stride()
-		x.cut(length, prefix=cutdir, loopless=loopless)
+		subjfns += x.cut(length, prefix=cutdir, loopless=loopless)
+	for pdb in targ:
+		x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
+		x.refine_stride()
+		targfns += x.cut(length, prefix=cutdir, loopless=loopless)
+
+	for sn in subjfns:
+		for tn in targfns:
+			fn = sn.split('/')[-1][:-4] + '_vs_' + tn.split('/')[-1][:-4]
+			print('superpose %s %s -o %s/%s.pdb > %s/%s.rmsd' % (sn, tn, outdir, fn, outdir, fn))
 
 if __name__ == '__main__':
 	import argparse
