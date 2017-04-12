@@ -74,7 +74,14 @@ class PDBTM:
 						t[0] = min(t[0], h[0])
 						t[1] = max(t[1], h[1])
 			#for t in self.tmss[c]: print('color %s, c. %s and i. %d-%d' % (('red', c) + tuple(t)))
-	def cut(self, n, prefix='cut_pdbs', loopless=False): 
+	def cut(self, n, prefix='cut_pdbs', loopless=False, compact=False): 
+
+		if compact:
+			#print(self.pdbfn.split('/')[-1][:-4])
+			for c in self.chains:
+				for i in range(len(self.tmss[c])-n+1):
+					print('%s\t%s\t%d\t%d\t%d\t%d' % (self.id, c, i, i+n-1, self.tmss[c][i][0], self.tmss[c][i+n-1][1]))
+
 		f = open(self.pdbfn)
 		chainspec = {}
 		for c in self.chains: chainspec[c] = ''
@@ -158,5 +165,6 @@ if __name__ == '__main__':
 	for pdb in args.pdb:
 		x = PDBTM(pdb.lower(),'%s/%s' % (args.raw_dir, pdb), db=args.db)
 		x.refine_stride()
-		if not args.indices_only: x.cut(args.n_helices, loopless=args.loopless)
-		else: x.print_indices()
+		#if not args.indices_only: x.cut(args.n_helices, loopless=args.loopless)
+		#else: x.print_indices()
+		x.cut(args.n_helices, loopless=args.loopless, compact=args.indices_only)
