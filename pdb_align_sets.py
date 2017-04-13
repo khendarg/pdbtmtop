@@ -9,7 +9,7 @@ import time
 import dbtool
 import make_bundles
 
-VERBOSITY = 1
+VERBOSITY = 0
 
 def info(*msgs): 
 	for l in msgs: print(l, file=sys.stderr)
@@ -27,26 +27,50 @@ def fetch(pdblist, outdir='raw_pdbs', overwrite=False):
 		f.close(), url.close()	
 		time.sleep(0.5)
 
-def align(subj, targ, length=4, loopless=False, rawdir='raw_pdbs', cutdir='cut_pdbs', outdir='mobiles', redownload=False, db='pdbtm', dryrun=False):
+def align(subj, targ, length=4, loopless=False, rawdir='raw_pdbs', cutdir='cut_pdbs', outdir='mobiles', redownload=False, db='pdbtm', dryrun=False, compact=True):
 
 	if not os.path.isdir(outdir): os.mkdir(outdir)
 
 	fetch(subj+targ, outdir=rawdir, overwrite=redownload)
 
 	subjfns, targfns = [], []
+	#for pdb in subj:
+	#	x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
+	#	x.refine_stride()
+	#	subjfns += x.cut(length, prefix=cutdir, loopless=loopless, compact=compact)
+	#for pdb in targ:
+	#	x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
+	#	x.refine_stride()
+	#	targfns += x.cut(length, prefix=cutdir, loopless=loopless, compact=compact)
+
+	#if noloop, noloop them and dump them off first
+	subjs, targs = [], []
 	for pdb in subj:
 		x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
 		x.refine_stride()
-		subjfns += x.cut(length, prefix=cutdir, loopless=loopless)
+		subjs.append(x)
+		x.cut(length, compact=compact)
 	for pdb in targ:
 		x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
 		x.refine_stride()
-		targfns += x.cut(length, prefix=cutdir, loopless=loopless)
+		targs.append(x)
+		x.cut(length, compact=compact)
 
-	for sn in subjfns:
-		for tn in targfns:
-			fn = sn.split('/')[-1][:-4] + '_vs_' + tn.split('/')[-1][:-4]
-			print('superpose %s %s -o %s/%s.pdb > %s/%s.rmsd' % (sn, tn, outdir, fn, outdir, fn))
+	def fmt_list(x):
+		out = ''
+		for i in range(x[0]+1, x[1]+2):
+			out += '_%d' % i
+		return out[1:]
+
+	for s in subjs:
+		for t in targs:
+			for sc in s.chains:
+				for tc in t.chains:
+					#print('superpose %s/%s.pdb -s //%s/-/*' % (rawdir, s.id, sc))
+					for ss in zip(s.mapping[sc], s.cosmetic[sc]):
+						for ts in zip(t.mapping[tc], t.cosmetic[tc]):
+							fn = '%s_h%s_%s_h%s' % (s.id, fmt_list(ss[1]), t.id, fmt_list(ts[1]))
+							print('superpose %s/%s.pdb -s //%s/%s-%s/* %s/%s.pdb -s //%s/%s-%s/* -o %s/%s.pdb > %s/%s.rmsd' % (rawdir, s.id, sc, ss[0][0], ss[0][1], rawdir, t.id, tc, ts[0][0], ts[0][1], outdir, fn, outdir, fn))
 
 if __name__ == '__main__':
 	import argparse
@@ -60,7 +84,6 @@ if __name__ == '__main__':
 	parser.add_argument('-c', metavar='CUTS_DIR', default='cut_pdbs', help='where to store/read cut PDBs to/from {default:cut_pdbs}')
 	parser.add_argument('-r', metavar='RAWS_DIR', default='raw_pdbs', help='where to store/read raw PDBs to/from {default:raw_pdbs}')
 
-	parser.add_argument('-n', action='store_true', help='Align nothing, only produce a list of alignments')
 	parser.add_argument('-o', metavar='OUT_DIR', default='alignments', help='If aligning, where to store the aligned. Else, where to store the alignment cassette')
 
 	parser.add_argument('-f', action='store_true', help='Force redownload of PDBs')

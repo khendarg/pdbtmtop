@@ -8,6 +8,9 @@ import argparse
 import subprocess
 import xml.etree.ElementTree as ET
 import subprocess
+
+VERBOSITY = 0
+
 def error(*msg):
 	for x in msg: print('[ERROR]', x, file=sys.stderr)
 	exit()
@@ -17,6 +20,7 @@ class PDBTM:
 		#self.tree = ET.parse(filename)
 		#self.root = self.tree.getroot()
 		self.id = id
+		self.mapping, self.cosmetic = {}, {}
 		def strsum(l):
 			s = ''
 			for x in l: s += x.rstrip() + '\n'
@@ -78,9 +82,19 @@ class PDBTM:
 
 		if compact:
 			#print(self.pdbfn.split('/')[-1][:-4])
+			mapping = {}
+			cosmetic = {}
 			for c in self.chains:
+				mapping[c] = []
+				cosmetic[c] = []
 				for i in range(len(self.tmss[c])-n+1):
-					print('%s\t%s\t%d\t%d\t%d\t%d' % (self.id, c, i, i+n-1, self.tmss[c][i][0], self.tmss[c][i+n-1][1]))
+					#'%s\t%s\t%d\t%d\t%d\t%d' % (self.id, c, i, i+n-1, self.tmss[c][i][0], self.tmss[c][i+n-1][1])
+					if VERBOSITY: print('%s\t%s\t%d\t%d\t%d\t%d' % (self.id, c, i, i+n-1, self.tmss[c][i][0], self.tmss[c][i+n-1][1]))
+					mapping[c].append((self.tmss[c][i][0], self.tmss[c][i+n-1][1]))
+					cosmetic[c].append((i, i+n-1))
+
+			self.mapping, self.cosmetic = mapping, cosmetic
+			return
 
 		f = open(self.pdbfn)
 		chainspec = {}
