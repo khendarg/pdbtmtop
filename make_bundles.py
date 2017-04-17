@@ -11,12 +11,18 @@ import subprocess
 
 VERBOSITY = 0
 
+def warn(*msg):
+	for x in msg: print('[WARNING]', x, file=sys.stderr)
 def error(*msg):
 	for x in msg: print('[ERROR]', x, file=sys.stderr)
 	exit()
 
 class PDBTM:
 	def __init__(self, id, filename, db='pdbtm'):
+		self.pdbfn = filename
+		if not self.pdbfn.endswith('.pdb'): self.pdbfn += '.pdb'
+
+		self.failed = 0
 		#self.tree = ET.parse(filename)
 		#self.root = self.tree.getroot()
 		self.id = id
@@ -28,7 +34,10 @@ class PDBTM:
 		try: f = open('%s/%s.xml' % (db, id))
 		except IOError: 
 			if not os.path.isdir(db): error('Could not find an unpacked PDBTM database at %s. Has dbtool been run yet?' % db)
-			else: error('%s has no PDBTM entry. Is %s a membrane protein?' % (id, id))
+			else: 
+				warn('%s has no PDBTM entry. Is %s a membrane protein?' % (id, id))
+				raise ValueError('Not a membrane protein')
+				self.failed = 1
 		#for l in f: s.append(l)
 		#s = strsum(s[1:-1]).strip()
 		#s = strsum(s).strip()
@@ -46,11 +55,13 @@ class PDBTM:
 					if l2.tag.endswith("REGION"):
 						if l2.attrib['type'] == 'H': #print(l2.attrib)
 							self.tmss[chains[-1]].append([int(l2.attrib['pdb_beg']), int(l2.attrib['pdb_end'])])
-		self.pdbfn = filename + '.pdb'
 		self.chains = chains
 		if not os.path.isfile(self.pdbfn):
 			try: pdb = urllib.urlopen('https://files.rcsb.org/download/%s.pdb' % id)
-			except IOError: error('Could not download https://files.rcsb.org/download/%s.pdb' % id)
+			except IOError: 
+				try: pdb = urllib.urlopen('http://files.rcsb.org/download/%s.pdb' % id)
+				except IOError:	
+					error('Could not download http://files.rcsb.org/download/%s.pdb' % id)
 			f = open(self.pdbfn, 'w')
 			f.write(pdb.read())
 			pdb.close()

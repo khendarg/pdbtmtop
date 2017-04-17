@@ -45,16 +45,28 @@ def align(subj, targ, length=4, loopless=False, rawdir='raw_pdbs', cutdir='cut_p
 
 	#if noloop, noloop them and dump them off first
 	subjs, targs = [], []
+	delme = []
 	for pdb in subj:
-		x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
+		try: x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
+		except ValueError: 
+			delme.append(pdb)
+			continue
 		x.refine_stride()
 		subjs.append(x)
 		x.cut(length, compact=compact)
 	for pdb in targ:
-		x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
+		try: x = make_bundles.PDBTM(pdb, '%s/%s.pdb' % (rawdir, pdb), db=db)
+		except ValueError: 
+			delme.append(pdb)
+			continue
 		x.refine_stride()
 		targs.append(x)
 		x.cut(length, compact=compact)
+	for x in delme: 
+		try: subjs.remove(x)
+		except ValueError: continue
+		try: targs.remove(x)
+		except ValueError: continue
 
 	def fmt_list(x):
 		out = ''
