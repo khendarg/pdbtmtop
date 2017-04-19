@@ -81,7 +81,8 @@ def align(subj, targ, length=4, loopless=False, rawdir='raw_pdbs', cutdir='cut_p
 					#print('superpose %s/%s.pdb -s //%s/-/*' % (rawdir, s.id, sc))
 					for ss in zip(s.mapping[sc], s.cosmetic[sc]):
 						for ts in zip(t.mapping[tc], t.cosmetic[tc]):
-							fn = '%s_h%s_%s_h%s' % (s.id, fmt_list(ss[1]), t.id, fmt_list(ts[1]))
+							fn = '%s_%s_h%s_%s_%s_h%s' % (s.id, sc, fmt_list(ss[1]), t.id, tc, fmt_list(ts[1]))
+							if s.id == t.id and sc == tc: continue
 							print('superpose %s/%s.pdb -s //%s/%s-%s/* %s/%s.pdb -s //%s/%s-%s/* -o %s/%s.pdb > %s/%s.rmsd' % (rawdir, s.id, sc, ss[0][0], ss[0][1], rawdir, t.id, tc, ts[0][0], ts[0][1], outdir, fn, outdir, fn))
 
 if __name__ == '__main__':
