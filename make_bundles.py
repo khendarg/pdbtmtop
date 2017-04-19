@@ -57,11 +57,9 @@ class PDBTM:
 							self.tmss[chains[-1]].append([int(l2.attrib['pdb_beg']), int(l2.attrib['pdb_end'])])
 		self.chains = chains
 		if not os.path.isfile(self.pdbfn):
-			try: pdb = urllib.urlopen('https://files.rcsb.org/download/%s.pdb' % id)
+			try: pdb = urllib.urlopen('http://files.rcsb.org/download/%s.pdb' % id)
 			except IOError: 
-				try: pdb = urllib.urlopen('http://files.rcsb.org/download/%s.pdb' % id)
-				except IOError:	
-					error('Could not download http://files.rcsb.org/download/%s.pdb' % id)
+				error('Could not download http://files.rcsb.org/download/%s.pdb' % id)
 			f = open(self.pdbfn, 'w')
 			f.write(pdb.read())
 			pdb.close()
