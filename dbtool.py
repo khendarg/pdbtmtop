@@ -48,7 +48,7 @@ def build_database(fn, prefix):
 			header += l
 			firstline -= 1
 			continue
-		if l.startswith('<pdbtm'):
+		if l.startswith('</pdbtm'):
 			#if entries: entries[-1] += '</PDBTM>'
 			entries.append(header)
 			a = l.find('ID=') + 4
