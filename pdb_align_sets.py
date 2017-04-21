@@ -21,7 +21,7 @@ def fetch(pdblist, outdir='raw_pdbs', overwrite=False):
 			if VERBOSITY: info('Found %s/%s.pdb, not downloading' % (outdir, pdb))
 			continue
 		if VERBOSITY: info('Downloading %s.pdb' % pdb)
-		url = urllib.urlopen('https://files.rcsb.org/view/%s.pdb' % pdb)
+		url = urllib.urlopen('http://files.rcsb.org/view/%s.pdb' % pdb)
 		f = open('%s/%s.pdb' % (outdir, pdb), 'w')
 		f.write(url.read())
 		f.close(), url.close()	
