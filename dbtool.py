@@ -44,6 +44,7 @@ def build_database(fn, prefix):
 	pdbids = []
 	for l in db:
 		if 'PDBTM' in l: continue
+		if l.startswith('<?'): continue
 		if firstline:
 			header += l
 			firstline -= 1
