@@ -7,6 +7,9 @@ import urllib
 import argparse
 import xml.etree.ElementTree as ET
 
+def warn(*msgs):
+	for x in msgs: print('[WARNING]:', x, file=sys.stderr)
+
 class PDBTM:
 	def __init__(self, filename):
 		#self.tree = ET.parse(filename)
@@ -37,26 +40,26 @@ def get_database(prefix='.'):
 
 def build_database(fn, prefix):
 	print('Unpacking database...', file=sys.stderr)
-	db = open(fn)
+	f = open(fn)
+	db = f.read()
+	f.close()
 	firstline = 1
 	header = ''
 	entries = []
 	pdbids = []
-	for l in db:
-		if 'PDBTM' in l: continue
-		if l.startswith('<?'): continue
-		if firstline:
+	for l in db.split('\n'):
+		if firstline: 
 			header += l
 			firstline -= 1
 			continue
-		if l.startswith('</pdbtm'):
-			#if entries: entries[-1] += '</PDBTM>'
-			entries.append(header)
+		if 'PDBTM>' in l: continue
+		if l.startswith('<?'): continue
+		if l.startswith('<pdbtm'):
 			a = l.find('ID=') + 4
 			b = a + 4
 			pdbids.append(l[a:b])
-		if entries:
-			entries[-1] += l
+			entries.append(header)
+		entries[-1] += l
 	if not prefix.endswith('/'): prefix += '/'
 	if not os.path.isdir(prefix): os.mkdir(prefix)
 	for entry in zip(pdbids, entries):

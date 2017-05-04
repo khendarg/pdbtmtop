@@ -135,4 +135,4 @@ if __name__ == '__main__':
 	while '' in subj: subj.remove('')
 	while '' in targ: targ.remove('')
 
-	align(subj, targ, length=args.l, loopless=args.x, rawdir=args.r, cutdir=args.c, redownload=args.f, db=args.d)
+	align(subj, targ, length=args.l, loopless=args.x, rawdir=args.r, cutdir=args.c, outdir=args.o, redownload=args.f, db=args.d)
