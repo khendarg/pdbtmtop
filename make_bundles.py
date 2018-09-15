@@ -65,7 +65,7 @@ class PDBTM:
 			pdb.close()
 	def refine_stride(self): 
 		try: strideout = subprocess.check_output(['stride', self.pdbfn])
-		except subprocess.CalledProcessError: error('Corrupt or empty PDB file at %s' % self.pdbfn)
+		except subprocess.CalledProcessError: warn('Corrupt or empty PDB file at %s' % self.pdbfn)
 		hels = {}
 		for l in strideout.split('\n'):
 			if l.startswith('LOC') and l[5:15].strip().endswith('Helix'):
@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
 	for pdb in args.pdb:
 		x = PDBTM(pdb.lower(),'%s/%s' % (args.raw_dir, pdb), db=args.db)
-		x.refine_stride()
+		try: x.refine_stride()
 		#if not args.indices_only: x.cut(args.n_helices, loopless=args.loopless)
 		#else: x.print_indices()
 		x.cut(args.n_helices, loopless=args.loopless, compact=args.indices_only)

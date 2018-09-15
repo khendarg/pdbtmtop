@@ -33,8 +33,8 @@ def get_database(prefix='.'):
 	db = urllib.urlopen('http://pdbtm.enzim.hu/data/pdbtmall')
 	print('Saving database...', file=sys.stderr)
 	f = open('%s/pdbtmall' % prefix, 'w')
-	#for l in db: f.write(l)
-	f.write(db.read())
+	for l in db: f.write(l)
+	#f.write(db.read())
 	db.close()
 	f.close()
 
@@ -59,7 +59,7 @@ def build_database(fn, prefix):
 			b = a + 4
 			pdbids.append(l[a:b])
 			entries.append(header)
-		entries[-1] += l
+		entries[-1] += '\n' + l
 	if not prefix.endswith('/'): prefix += '/'
 	if not os.path.isdir(prefix): os.mkdir(prefix)
 	for entry in zip(pdbids, entries):

@@ -41,6 +41,7 @@ def pdblast(fastas, ident=10, alnlen=60, evalue=0.05):
 	results = []
 	ifail, lfail, efail = 0,0,0
 	for l in blastout.split('\n'):
+		if VERBOSITY: print(l)
 		if l.strip().startswith('#'): continue
 		if not l.strip(): continue
 		row = l.split('\t')
@@ -61,7 +62,7 @@ def pdblast(fastas, ident=10, alnlen=60, evalue=0.05):
 		if efail: print('[INFO]: %s hit(s) rejected due to excessive E-value (>%s)' % (efail, evalue), file=sys.stderr)
 	return results
 
-def select_best_matches(blasts, depth=5):
+def select_best_matches(blasts, depth=5, identcutoff=10, lencutoff=60):
 	#{PDB: [(score, TCID), (score, TCID)]}
 
 	exp = '[0-9]\.[A-Z]\.'
@@ -72,28 +73,35 @@ def select_best_matches(blasts, depth=5):
 	table = {}
 	for l in blasts:
 		tcid = re.findall(exp, l[0])[0]
-		score = l[11]
-		ident = l[2]
-		evalue = l[10]
+		score = float(l[11])
+		ident = float(l[2])
+		evalue = float(l[10])
+		length = int(l[3])
 		#maybe use e-value instead?
-
-		try: table[l[1]].append((score, tcid, ident, evalue))
-		except KeyError: table[l[1]] = [(score, tcid, ident, evalue)]
+		if ident < identcutoff: continue
+		if length < lencutoff: continue
+		
+		try: table[l[1]].append((evalue, tcid, ident, score, length))
+		except KeyError: table[l[1]] = [(evalue, tcid, ident, score, length)]
 	finaltable = {}
 	for k in sorted(table.keys()):
 		#print(k, sorted(table[k])[::-1])
-		finaltable[k] = sorted(table[k])[-1]
+		#finaltable[k] = sorted(table[k])[-1]
+		finaltable[k] = sorted(table[k])[0]
 	return finaltable
 
 def filter_membranes(finaltable):
 	if not os.path.isdir('pdbtm'): 
 		print('[ERROR]: Could not find PDBTM database. Has dbtool.py been run yet?', file=sys.stderr)
 		exit()
+	if len(os.listdir('pdbtm')) < 100:
+		print('[ERROR]: Could not find PDBTM database. Has dbtool.py been run yet?', file=sys.stderr)
 	delme = []
 	chainct = 0
 	pdbct = 0
 	for pdb in sorted(finaltable):
 		if not os.path.isfile('pdbtm/' + pdb[:4].lower() + '.xml'): 
+			if VERBOSITY: print('[INFO]: Removed %s for not being in PDBTM' % pdb)
 			delme.append(pdb)
 			pdbct += 1
 		else:
@@ -104,6 +112,7 @@ def filter_membranes(finaltable):
 			for l in x.split('\n'): 
 				if l.startswith('  <CHAIN CHAINID="'): goodchains.append(l[18])
 			if pdb[5] not in goodchains: 
+				if VERBOSITY: print('[INFO]: Removed %s for not being in goodchains' % pdb)
 				delme.append(pdb)
 				chainct += 1
 	
@@ -113,13 +122,18 @@ def filter_membranes(finaltable):
 	return finaltable
 
 def pretty_print_table(finaltable):
-	convenient = []	
-	for pdb in finaltable:
-		convenient.append([finaltable[pdb], pdb, finaltable[pdb]])
-	convenient.sort()
-	for x in convenient: 
-		print('%s\t%s\t%s\t%s' % (x[1], x[2][1], x[2][2], x[2][3]))
+	#convenient = []	
+	#for pdb in finaltable:
+	#	convenient.append([finaltable[pdb], pdb, finaltable[pdb]])
+	#convenient.sort()
+	#for x in convenient: 
+	out = ''
+	for k in sorted(finaltable.keys()):
+		x = finaltable[k]
+		out += '\n%s\t%s\t%s\t%s\t%s' % (x[1], k, x[0], x[2], x[3])
+		#print('%s\t%s\t%s\t%s' % (x[1], x[2][1], x[2][2], x[2][3]))
 		#print(x[1] + '\t' + x[2] + '\t' + x[3])
+	return out
 
 if __name__ == '__main__':
 	import argparse
@@ -128,6 +142,7 @@ if __name__ == '__main__':
 
 	parser.add_argument('tcids', nargs='+', help='a list of TCDB identifiers')
 	parser.add_argument('-f', default=os.environ['BLASTDB'] + '/tcdb', help='All FASTAs in intended database')
+	parser.add_argument('-e', metavar='evalue', default=0.05, type=float, help='maximum e-value')
 	parser.add_argument('-i', action='store_true', help='include non-membrane proteins')
 	parser.add_argument('-v', action='store_true', help='verbose output')
 
@@ -147,12 +162,12 @@ if __name__ == '__main__':
 		done += fastas.count('>')
 		if VERBOSITY: print('[INFO]: BLASTing %s sequences' % done, file=sys.stderr)
 
-		blasts += pdblast(pullfasta(tcid, args.f ))
+		blasts += pdblast(pullfasta(tcid, args.f ), evalue=args.e)
 	out = select_best_matches(blasts)
 	#use $'\t'
 	#for pdb in sorted(out): print(pdb + '\t' + out[pdb])
 	#0.33, 0.30s/TCDB entry (at 5th level)
 	#sed 's/_.*$//g' ../all_tcpdb | sort | uniq | wc > getlist
 	if not args.i: filter_membranes(out)
-		
-	pretty_print_table(out)
+
+	print(pretty_print_table(out))
